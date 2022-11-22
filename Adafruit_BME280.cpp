@@ -345,17 +345,24 @@ float Adafruit_BME280::readTemperature(void) {
   if (adc_T == 0x800000) // value in case temp measurement was disabled
     return NAN;
   adc_T >>= 4;
-
-  var1 = (int32_t)((adc_T / 8) - ((int32_t)_bme280_calib.dig_T1 * 2));
-  var1 = (var1 * ((int32_t)_bme280_calib.dig_T2)) / 2048;
-  var2 = (int32_t)((adc_T / 16) - ((int32_t)_bme280_calib.dig_T1));
-  var2 = (((var2 * var2) / 4096) * ((int32_t)_bme280_calib.dig_T3)) / 16384;
+//var1 = ((((adc_T>>3) – ((BME280_S32_t)dig_T1<<1))) * ((BME280_S32_t)dig_T2)) >> 11;
+  var1 = (int32_t)((adc_T >> 3) - ((int32_t)_bme280_calib.dig_T1<<1));
+  var1 = (var1 * ((int32_t)_bme280_calib.dig_T2)) >> 11;
+//var2 = (((
+//           ((adc_T>>4) – ((BME280_S32_t)dig_T1)) *
+//           ((adc_T>>4) – ((BME280_S32_t)dig_T1))
+//         )  >> 12
+//        )
+//        *  ((BME280_S32_t)dig_T3)
+//       ) >> 14;
+  var2 = (int32_t)((adc_T >> 4) - ((int32_t)_bme280_calib.dig_T1));
+  var2 = (((var2 * var2) >> 12) * ((int32_t)_bme280_calib.dig_T3)) >> 14;
 
   t_fine = var1 + var2 + t_fine_adjust;
 
-  int32_t T = (t_fine * 5 + 128) / 256;
+  int32_t T = (t_fine * 5 + 128) >> 8;
 
-  return (float)T / 100;
+  return (float)T/100.00f;
 }
 
 /*!
